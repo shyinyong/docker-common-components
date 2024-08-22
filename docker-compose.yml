@@ -1,0 +1,74 @@
+services:
+  common_redis:
+    image: redis:latest
+    container_name: common_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - common-network
+
+  etcd:
+    image: bitnami/etcd:latest
+    container_name: etcd
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - etcd_data:/etcd-data
+    environment:
+      - ETCD_NAME=etcd-server
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_CLUSTER=etcd-server=http://0.0.0.0:2380
+
+    networks:
+      - common-network      
+
+  nats:
+    image: nats:latest
+    container_name: nats
+    ports:
+      - "4222:4222"   # 客户端连接端口
+      - "6222:6222"   # 集群端口
+      - "8222:8222"   # HTTP 管理端口
+      - "7422:7422"   # 路由端口
+    environment:
+      - NATS_SERVER_NAME=nats-server
+      - NATS_CLUSTER_NAME=nats-cluster
+    command: >
+      -js
+      --name nats-server
+      --cluster_name nats-cluster
+      --cluster nats://0.0.0.0:6222
+      --http_port 8222
+      --store_dir=/data/nats
+      --routes nats-route://nats-server:7422
+    volumes:
+      - nats_data:/data/nats
+    networks:
+      - common-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    networks:
+      - common-network
+
+volumes:
+  mongodb_data:
+  etcd_data:
+  nats_data:
+
+
+networks:
+  common-network:
