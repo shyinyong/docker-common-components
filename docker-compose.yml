@@ -25,7 +25,7 @@ services:
       - ETCD_INITIAL_CLUSTER=etcd-server=http://0.0.0.0:2380
     networks:
       - common-network
-      
+
   nats:
     image: nats:latest
     container_name: nats
@@ -39,10 +39,32 @@ services:
       --name nats-server
       --http_port 8222
       --store_dir=/data/nats
+      --cluster_name nats-streaming
     volumes:
       - nats_data:/data/nats
     networks:
       - common-network
+
+  nats-streaming:
+    image: nats-streaming:latest
+    container_name: nats-streaming
+    ports:
+      - "4223:4222"
+      - "8223:8222"
+    environment:
+      - "STAN_CLUSTER_ID=my_cluster"
+      - "STAN_NATS_SERVER=nats://nats:4222"
+    command: >
+      - "--cluster nats-streaming"
+      - "--nats_server nats://nats:4222"
+      "-p", "4222"
+      "-m", "8222"
+    volumes:
+      - nats_data:/data/nats-streaming
+    networks:
+      - common-network
+    depends_on:
+      - nats
 
   mongodb:
     image: mongo:latest
