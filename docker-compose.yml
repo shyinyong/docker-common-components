@@ -27,26 +27,58 @@ services:
       - common-network
 
   nats:
-    image: nats:latest
+    image: nats:2.1.8-alpine3.11
     container_name: nats
-    ports:
-      - "4222:4222"
-      - "8222:8222"
+
     networks:
       - common-network
+    command: 
+      - "--debug"
+      - "--cluster"
+      - "nats://nats:6222"
+      - "--http_port"
+      - "8222"
+      - "--port" 
+      - "4222"
+    ports: 
+      - "4222:4222"
+      - "18222:8222"
 
   nats-streaming:
-    image: nats-streaming:latest
+    image: nats-streaming:0.18.0-alpine
     container_name: nats-streaming
-    environment:
-      - STAN_CLUSTER_ID=my_cluster
-      - STAN_NATS_SERVER=nats://nats:4222
-    ports:
-      - "4223:4223"
-    depends_on:
-      - nats
     networks:
       - common-network
+    command: 
+      - "--clustered"
+      - "--nats_server"
+      - "nats://nats:6222"
+      - "--cluster_bootstrap"
+      - "--cluster_node_id"
+      - "node1"
+      - "--cluster_log_path"
+      - "/data/log"
+      - "--cluster_raft_logging"
+      - "--debug"
+      - "--dir"
+      - "/data/msg"
+      - "--store"
+      - "file"
+      - "--cluster"
+      - "nats://nats:6222"
+      - "--stan_debug"
+      - "--http_port"
+      - "8222"
+      - "--hb_interval"
+      - 2s
+      - "--hb_fail_count"
+      - "1"
+      - "--hb_timeout"
+      - 5s
+    ports: 
+      - "18224:8222"
+    volumes:
+      - "./nats-streaming-1:/data"
 
   mongodb:
     image: mongo:latest
