@@ -26,28 +26,59 @@ services:
     networks:
       - common-network
 
-  nats-streaming:
-    image: nats-streaming:latest
-    container_name: nats-streaming
-    ports:
-      - "4222:4222"   # NATS server client connections
-      - "8222:8222"   # NATS server monitoring
-      - "6222:6222"   # NATS server routing connections (cluster port)
-      - "8223:8223"   # NATS Streaming server monitoring
-    environment:
-      - "STAN_CLUSTER_ID=test-cluster"
-      - CLUSTER_ID=test-cluster      # NATS Streaming cluster ID
-      - STORE=file                   # Storage type (file or memory)
-      - DIR=/data/nats-streaming     # Directory for file storage
-    command: [
-      "-p", "4222",
-      "-m", "8222"
-    ]
-    volumes:
-      - nats_streaming_data:/data/nats-streaming  # Volume for persistence # - "./nats-streaming-1:/data"
+  nats:
+    image: nats:2.1.8-alpine3.11
+    container_name: nats
 
     networks:
       - common-network
+    command: 
+      - "--debug"
+      - "--cluster"
+      - "nats://nats:6222"
+      - "--http_port"
+      - "8222"
+      - "--port" 
+      - "4222"
+    ports: 
+      - "4222:4222"
+      - "18222:8222"
+
+  nats-streaming:
+    image: nats-streaming:0.18.0-alpine
+    container_name: nats-streaming
+    networks:
+      - common-network
+    command: 
+      - "--clustered"
+      - "--nats_server"
+      - "nats://nats:6222"
+      - "--cluster_bootstrap"
+      - "--cluster_node_id"
+      - "node1"
+      - "--cluster_log_path"
+      - "/data/log"
+      - "--cluster_raft_logging"
+      - "--debug"
+      - "--dir"
+      - "/data/msg"
+      - "--store"
+      - "file"
+      - "--cluster"
+      - "nats://nats:6222"
+      - "--stan_debug"
+      - "--http_port"
+      - "8222"
+      - "--hb_interval"
+      - 2s
+      - "--hb_fail_count"
+      - "1"
+      - "--hb_timeout"
+      - 5s
+    ports: 
+      - "18224:8222"
+    volumes:
+      - "./nats-streaming-1:/data"
 
   mongodb:
     image: mongo:latest
@@ -83,7 +114,6 @@ volumes:
   mongodb_data:
   etcd_data:
   nats_data:
-  nats_streaming_data:
   
 networks:
   common-network:
