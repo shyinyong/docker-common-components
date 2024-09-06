@@ -72,7 +72,8 @@ services:
       MYSQL_USER: apple
       MYSQL_PASSWORD: 123456
     volumes:
-      - mysql_data:/var/lib/mysql
+      # - mysql_data:/var/lib/mysql
+      - /Users/yinyong/GitRepos/docker-common-components/data/mysql_data:/var/lib/mysql
     ports:
       - "3306:3306"
     networks:
