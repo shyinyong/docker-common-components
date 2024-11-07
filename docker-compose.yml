@@ -9,6 +9,18 @@ services:
     networks:
       - common-network
 
+  php:
+    build: ./php
+    container_name: php
+    volumes:
+      - ./php:/var/www/html
+    networks:
+      - common-network
+    environment:
+      XDEBUG_MODE: debug,develop
+      XDEBUG_CONFIG: remote_enable=1 remote_autostart=1
+
+
   redis:
     image: redis:latest
     container_name: redis
@@ -75,7 +87,7 @@ services:
       MYSQL_USER: apple
       MYSQL_PASSWORD: 123456
     volumes:
-      - /Users/yinyong/GitRepos/docker-common-components/data/mysql_data:/var/lib/mysql
+      - D:/MysqlData:/var/lib/mysql
     ports:
       - "3306:3306"
     networks:
